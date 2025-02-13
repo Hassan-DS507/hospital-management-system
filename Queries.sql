@@ -55,40 +55,56 @@ JOIN Doctor D ON A.DoctorID = D.DoctorID
 WHERE A."Date" > CURRENT_DATE  
 ORDER BY A."Date";  
 
+-- 1. Doctor’s Prescription History  
+-- This query retrieves all prescriptions issued by each doctor.  
+-- It includes the doctor's name, patient's name, prescription ID, and medication prescribed.  
+-- The data is fetched by joining the Prescription, Appointment, Patient, and Doctor tables.  
+-- Results are ordered by doctor’s name and then by patient’s name.  
+SELECT 
+    d.DoctorName AS Doctor,
+    p.PatientName AS Patient,
+    pr.PrescriptionID,
+    pr.Medication
+FROM Prescription pr
+JOIN Appointment a ON pr.AppointmentID = a.AppointmentID
+JOIN Patient p ON a.PatientID = p.PatientID
+JOIN Doctor d ON a.DoctorID = d.DoctorID
+ORDER BY d.DoctorName, p.PatientName;
 
-/*Objective:
-I need you to create reports that show the data related to patients, their appointments, the prescriptions given by doctors, and the payment details for each appointment. The goal is to use SQL to pull this data from the database and organize it in a way that is easy to understand.
 
-Instructions:
-Doctor’s Prescription History:
+-- 2. Upcoming Appointments  
+-- This query retrieves all upcoming appointments for patients.  
+-- Only appointments with a date later than today are included.  
+-- It fetches patient name, appointment date, and doctor name.  
+-- The data is retrieved by joining the Patient, Appointment, and Doctor tables.  
+-- Results are ordered by appointment date.  
+SELECT 
+    p.PatientName,
+    a.AppointmentDate,
+    d.DoctorName
+FROM Appointment a
+JOIN Patient p ON a.PatientID = p.PatientID
+JOIN Doctor d ON a.DoctorID = d.DoctorID
+WHERE a.AppointmentDate > CURRENT_DATE
+ORDER BY a.AppointmentDate;
 
-List all prescriptions issued by each doctor.
-For each prescription, show:
-Doctor’s name
-Patient’s name
-Prescription ID
-Medication prescribed
-Group the results by doctor and patient.
-Join the tables: Patient, Doctor, Appointment, and Prescription.
-Upcoming Appointments:
 
-Show all patients with their upcoming appointments.
-Only show future appointments, meaning the ones where the appointment date is after today’s date.
-Include the following information:
-Patient name
-Appointment date
-Doctor name
-Join the tables: Patient, Appointment, and Doctor.
-Payment Status for Appointments:
-
-For each appointment, show:
-Appointment ID
-Patient name
-Appointment date
-Payment status (Has the patient paid or not?)
-Amount paid
-Join the tables: Appointment, Payment, and Patient.
-Order the results: Arrange appointments from the most recent to the oldest.
-Group Data (When Needed):
-
-Sometimes you will need to group the data based on either the doctor or patient, especially if there are multiple appointments or prescriptions for the same person.*/
+-- 3. Payment Status for Appointments  
+-- This query retrieves the payment status for each appointment.  
+-- It includes the appointment ID, patient name, appointment date, payment status, and amount paid.  
+-- The CASE statement determines whether the patient has paid or not.  
+-- COALESCE is used to replace NULL values with 0 for unpaid amounts.  
+-- Results are ordered from the most recent to the oldest appointment.  
+SELECT 
+    a.AppointmentID,
+    p.PatientName,
+    a.AppointmentDate,
+    CASE 
+        WHEN pay.AmountPaid IS NOT NULL THEN 'Paid'
+        ELSE 'Not Paid'
+    END AS PaymentStatus,
+    COALESCE(pay.AmountPaid, 0) AS AmountPaid
+FROM Appointment a
+JOIN Patient p ON a.PatientID = p.PatientID
+LEFT JOIN Payment pay ON a.AppointmentID = pay.AppointmentID
+ORDER BY a.AppointmentDate DESC;
